@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>六爻算卦小程序</title>
+<meta property="og:title" content="六爻算卦小程序" />
+<meta property="og:description" content="掷铜钱起卦，自动排卦解卦，支持线上摇卦与线下输入。" />
+<meta property="og:type" content="website" />
+<style>
+  :root{
+    --bg:#0e0e11;
+    --surface:#16161a;
+    --surface-2:#1d1d22;
+    --border:#26262c;
+    --text:#e8e8ea;
+    --muted:#8f8f98;
+    --accent:#7aa2ff;
+    --line:#e8e8ea;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding:28px 12px 60px;
+  }
+  .wrap{max-width:620px;margin:0 auto;}
+  header{text-align:center;margin:6px 0 20px;}
+  header h1{margin:0;font-size:24px;font-weight:600;letter-spacing:6px;color:var(--text);}
+  header .sub{color:var(--muted);font-size:12px;margin-top:6px;letter-spacing:3px;}
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:20px 18px;
+    margin:12px 0;
+  }
+  .card h2{margin:0 0 8px;font-size:17px;font-weight:600;letter-spacing:1px;color:var(--text);}
+  .hint{color:var(--muted);font-size:13px;margin:4px 0 14px;}
+  .tabs{display:flex;gap:8px;margin:14px 0;}
+  .tab{
+    flex:1;
+    padding:11px 6px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:transparent;
+    color:var(--muted);
+    font-size:15px;
+    cursor:pointer;
+    transition:.15s;
+    letter-spacing:1px;
+  }
+  .tab.active{background:var(--accent);border-color:var(--accent);color:#0e0e11;font-weight:600;}
+  button{font-family:inherit;}
+  .primary{
+    display:block;width:100%;
+    padding:13px;
+    font-size:16px;
+    letter-spacing:2px;
+    background:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:8px;
+    color:#0e0e11;
+    cursor:pointer;
+    font-weight:600;
+    transition:.15s;
+  }
+  .primary:active{opacity:.85;}
+  .primary:disabled{opacity:.4;cursor:not-allowed;}
+  .secondary{
+    display:block;width:100%;
+    margin-top:10px;padding:10px;
+    background:transparent;
+    border:1px solid var(--border);
+    border-radius:8px;
+    color:var(--muted);
+    cursor:pointer;
+    font-size:14px;
+    letter-spacing:1px;
+    transition:.15s;
+  }
+  .secondary:hover{border-color:var(--muted);color:var(--text);}
+  .counter{text-align:center;font-size:14px;color:var(--accent);letter-spacing:1px;margin:10px 0;font-weight:600;}
+  .coins{display:flex;justify-content:center;gap:14px;min-height:66px;align-items:center;margin:14px 0;}
+  .coin{
+    width:58px;height:58px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;font-weight:600;
+    border:1px solid var(--border);
+  }
+  .coin.zheng{background:#ececee;color:#141417;}
+  .coin.fan{background:#2a2a30;color:#c9c9cf;}
+  .coin.flipping{animation:flip .55s ease-in-out infinite;}
+  @keyframes flip{0%{transform:rotateY(0);}100%{transform:rotateY(360deg);}}
+  .lastline{text-align:center;font-size:14px;min-height:22px;color:var(--text);}
+  .preview{display:flex;flex-direction:column;align-items:center;margin:6px 0;min-height:30px;}
+  .yao-row{display:flex;align-items:center;gap:10px;margin:4px 0;justify-content:center;}
+  .yao-name{width:40px;text-align:right;color:var(--muted);font-size:12px;}
+  .yao-bars{display:flex;gap:14px;}
+  .bar{height:12px;border-radius:6px;background:var(--line);}
+  .bar-yang{width:120px;}
+  .bar-yin{width:50px;}
+  .marker{width:22px;text-align:center;font-size:15px;color:var(--accent);font-weight:600;}
+  .offline-row{display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid var(--border);}
+  .offline-name{width:44px;font-size:14px;font-weight:600;letter-spacing:1px;}
+  .offline-coins{display:flex;gap:8px;flex:1;}
+  .coin-sm{
+    width:42px;height:42px;border-radius:50%;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    font-size:16px;font-weight:600;
+    cursor:pointer;color:var(--muted);
+    transition:.15s;
+  }
+  .coin-sm.zheng{background:#ececee;color:#141417;border-color:#ececee;}
+  .coin-sm.fan{background:#2a2a30;color:#c9c9cf;border-color:#3a3a42;}
+  .offline-result{width:96px;text-align:right;font-size:12.5px;color:var(--muted);}
+  .offline-result.yang{color:var(--accent);font-weight:600;}
+  .offline-result.yin{color:#c9c9cf;font-weight:600;}
+  .result-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+  @media(min-width:520px){.result-grid{grid-template-columns:1fr 1fr;}}
+  .hex-card{border:1px solid var(--border);border-radius:8px;padding:14px;background:var(--surface-2);}
+  .hex-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .hex-symbol{font-size:38px;line-height:1;}
+  .hex-name{font-size:17px;font-weight:600;letter-spacing:1px;}
+  .hex-short{font-size:12px;color:var(--muted);}
+  .hex-head .fortune{margin-left:auto;}
+  .fortune{padding:2px 9px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;}
+  .fg-daji{color:#4ade80;background:rgba(74,222,128,.14);}
+  .fg-ji{color:#38bdf8;background:rgba(56,189,248,.14);}
+  .fg-ping{color:#a3a3ab;background:rgba(163,163,171,.14);}
+  .fg-xiong{color:#fbbf24;background:rgba(251,191,36,.14);}
+  .fg-da-xiong{color:#f87171;background:rgba(248,113,113,.14);}
+  .hex-lines{display:flex;flex-direction:column;align-items:center;margin:6px 0 10px;}
+  .hex-text{font-size:14px;color:var(--text);border-top:1px solid var(--border);padding-top:9px;}
+  .move-info{
+    text-align:center;margin-top:12px;padding:10px;
+    background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+    font-size:14px;color:var(--accent);font-weight:600;letter-spacing:1px;
+  }
+  .legend{font-size:12.5px;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+  .legend b{color:var(--text);font-weight:600;}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px;letter-spacing:1px;}
+  [hidden]{display:none !important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>六 爻 算 卦</h1>
+    <div class="sub">掷铜钱 · 起卦 · 解卦</div>
+  </header>
+
+  <div class="tabs">
+    <button id="tabOnline" class="tab active" onclick="switchMode('online')">🖥 线上摇卦</button>
+    <button id="tabOffline" class="tab" onclick="switchMode('offline')">🪙 线下输入</button>
+  </div>
+
+  <!-- 线上模式 -->
+  <section id="onlineSection" class="card">
+    <h2>线上摇卦</h2>
+    <p class="hint">点击按钮，系统自动为你掷三枚铜钱。每掷三枚记一爻，共六爻，从下往上排卦。</p>
+    <div id="lineCounter" class="counter">第 初 爻（1 / 6）</div>
+    <button id="tossBtn" class="primary" onclick="tossOnline()">🪙 掷硬币</button>
+    <div id="coinsDisplay" class="coins"></div>
+    <div id="lastLineLabel" class="lastline"></div>
+    <div id="onlinePreview" class="preview"></div>
+    <button class="secondary" onclick="resetOnline()">重新开始</button>
+  </section>
+
+  <!-- 线下模式 -->
+  <section id="offlineSection" class="card" hidden>
+    <h2>线下输入</h2>
+    <p class="hint">你在现实中掷三枚铜钱，点击下方每个硬币切换「正 / 反」，如实输入六爻后生成卦象。</p>
+    <div id="offlineLines"></div>
+    <button id="offlineGen" class="primary" onclick="offlineGenerate()">生成卦象</button>
+    <button class="secondary" onclick="resetOffline()">清空重来</button>
+  </section>
+
+  <div class="card legend">
+    <b>起卦规则：</b>三枚铜钱，<b>正面（字）记 3</b>，<b>反面（花/背）记 2</b>，三枚之和定一爻——<br>
+    三字 <b>9</b> 老阳 ○（阳爻、动爻）｜两字一花 <b>8</b> 少阴 ｜一字两花 <b>7</b> 少阳 ｜三花 <b>6</b> 老阴 ✕（阴爻、动爻）。
+  </div>
+
+  <!-- 结果 -->
+  <section id="resultSection" class="card" hidden>
+    <h2>卦象结果</h2>
+    <div id="resultBody"></div>
+    <button class="secondary" onclick="againBtn()">再占一卦</button>
+  </section>
+
+  <footer>六爻金钱卦 · 仅供娱乐参考，请理性看待</footer>
+</div>
+
+<script>
+"use strict";
+
+/* ===================== 六十四卦数据（文王卦序） ===================== */
+/* bin 为自下而上的六爻：1=阳爻，0=阴爻 */
+const HEXAGRAMS = [
+{n:1,name:"乾为天",short:"乾",bin:"111111",fortune:"大吉",text:"刚健中正，自强不息。诸事亨通，宜积极进取；但须守持正道，戒骄戒躁，防刚强过度。"},
+{n:2,name:"坤为地",short:"坤",bin:"000000",fortune:"吉",text:"厚德载物，柔顺利贞。宜守成、包容、顺从，厚积薄发，成就常在长远之中。"},
+{n:3,name:"水雷屯",short:"屯",bin:"100010",fortune:"中平",text:"万事起头难，创业维艰。宜稳扎稳打、积蓄力量，等待时机成熟再图进取。"},
+{n:4,name:"山水蒙",short:"蒙",bin:"010001",fortune:"中平",text:"蒙昧未开，如童稚求教。宜虚心学习、启蒙开智，不宜贸然行事、妄下决断。"},
+{n:5,name:"水天需",short:"需",bin:"111010",fortune:"吉",text:"云上于天，需待时机。宜耐心等待、蓄势待发，时机一到自然成功，切忌急躁冒进。"},
+{n:6,name:"天水讼",short:"讼",bin:"010111",fortune:"小凶",text:"有争讼之象，天升水降、背道而驰。宜和解退让、息事宁人，不宜争强斗胜，涉讼不利。"},
+{n:7,name:"地水师",short:"师",bin:"010000",fortune:"中平",text:"兴师动众，重在纪律。宜师出有名、用人得当，行事有组织、守规则方可成功。"},
+{n:8,name:"水地比",short:"比",bin:"000010",fortune:"吉",text:"亲比团结，众星拱月。宜广结善缘、诚心相交，得人心、得众助则诸事可成。"},
+{n:9,name:"风天小畜",short:"小畜",bin:"111011",fortune:"中平",text:"小有积蓄，力量尚小。宜蓄养待时、量力而行，暂不宜大举，稳步积累为上。"},
+{n:10,name:"天泽履",short:"履",bin:"110111",fortune:"中平",text:"如履虎尾，谨慎守礼。宜谦逊守分、循礼而行，步步为营，则虽险而无咎。"},
+{n:11,name:"地天泰",short:"泰",bin:"111000",fortune:"大吉",text:"天地交泰，上下通达。诸事顺遂、国泰民安，宜把握良机、积极作为，但须防盛极而衰。"},
+{n:12,name:"天地否",short:"否",bin:"000111",fortune:"小凶",text:"天地不交，闭塞不通。宜隐忍守静、修身待时，暂不谋进，静候转机到来。"},
+{n:13,name:"天火同人",short:"同人",bin:"101111",fortune:"吉",text:"与人同心，其利断金。宜公正无私、合作共事，团结志同道合者则大事可成。"},
+{n:14,name:"火天大有",short:"大有",bin:"111101",fortune:"大吉",text:"如日中天，大有收获。丰盛富足之时，宜善加运用、兼济他人，福泽方能长久。"},
+{n:15,name:"地山谦",short:"谦",bin:"001000",fortune:"大吉",text:"谦逊受益，满招损。谦谦君子，卑以自牧，六爻皆吉，处事低调谦和则无往不利。"},
+{n:16,name:"雷地豫",short:"豫",bin:"000100",fortune:"吉",text:"愉悦安乐，顺时而动。宜顺势而为、乐不忘忧，未雨绸缪，防乐极生悲。"},
+{n:17,name:"泽雷随",short:"随",bin:"100110",fortune:"吉",text:"随顺时势，随机应变。宜从善如流、追随正道，顺应大势而行则吉。"},
+{n:18,name:"山风蛊",short:"蛊",bin:"011001",fortune:"小凶",text:"积弊已深，蛊坏待治。宜除旧布新、整顿内部，拨乱反正，方能转危为安。"},
+{n:19,name:"地泽临",short:"临",bin:"110000",fortune:"吉",text:"居高临下，时机来临。宜积极进取、教化安抚，但须防盛极而衰、势尽则变。"},
+{n:20,name:"风地观",short:"观",bin:"000011",fortune:"中平",text:"观察审视，静观其变。宜反省自身、树立榜样，多看多想，谋定而后动。"},
+{n:21,name:"火雷噬嗑",short:"噬嗑",bin:"100101",fortune:"中平",text:"咬合障碍，须用强力。宜刚断明决、清除梗阻，或涉刑罚诉讼，明辨是非方可通。"},
+{n:22,name:"山火贲",short:"贲",bin:"101001",fortune:"中平",text:"文饰装点，注重仪表。宜修文饰、以礼相待，但不可徒有其表，须内外兼修。"},
+{n:23,name:"山地剥",short:"剥",bin:"000001",fortune:"小凶",text:"剥落衰败，阴盛阳微。宜顺时止行、保存实力，静待一阳来复，不可强为。"},
+{n:24,name:"地雷复",short:"复",bin:"100000",fortune:"吉",text:"一阳来复，否极泰来。生机渐复，宜重新开始、顺应正道，前途光明。"},
+{n:25,name:"天雷无妄",short:"无妄",bin:"100111",fortune:"中平",text:"不妄为，顺其自然。宜守正无邪、脚踏实地，妄动生灾，安分守己则吉。"},
+{n:26,name:"山天大畜",short:"大畜",bin:"111001",fortune:"吉",text:"大有蓄积，厚积薄发。宜养精蓄锐、蓄德蓄才，时机成熟可成就大业。"},
+{n:27,name:"山雷颐",short:"颐",bin:"100001",fortune:"中平",text:"颐养之道，养身养德。宜慎言语、节饮食，自食其力，养生养性为正。"},
+{n:28,name:"泽风大过",short:"大过",bin:"011110",fortune:"中平",text:"负荷过重，栋梁将折。非常之时宜有非常之举，但须谨慎支撑，防力不胜任。"},
+{n:29,name:"坎为水",short:"坎",bin:"010010",fortune:"凶",text:"重重险陷，如入深水。宜守持诚信、处险不惊，谨慎应对、循序渐进，终能脱险。"},
+{n:30,name:"离为火",short:"离",bin:"101101",fortune:"中平",text:"附丽光明，如火附薪。宜依附贤明、保持清明，光明磊落，但防躁进虚浮。"},
+{n:31,name:"泽山咸",short:"咸",bin:"001110",fortune:"吉",text:"两情感应，心心相印。宜诚恳相交、以情感人，婚恋和睦、合作和谐皆吉。"},
+{n:32,name:"雷风恒",short:"恒",bin:"011100",fortune:"吉",text:"恒久不变，持之以恒。宜守常守道、有始有终，切忌朝三暮四、半途而废。"},
+{n:33,name:"天山遁",short:"遁",bin:"001111",fortune:"中平",text:"退避隐遁，急流勇退。宜见机而作、避世待时，暂敛锋芒，保存实力为上。"},
+{n:34,name:"雷天大壮",short:"大壮",bin:"111100",fortune:"中平",text:"阳刚壮盛，雷动于天。宜守正用强、以正胜邪，防恃强凌弱、鲁莽行事。"},
+{n:35,name:"火地晋",short:"晋",bin:"000101",fortune:"吉",text:"晋升前进，如日之升。宜积极进取、光明磊落，得遇明主则前程似锦。"},
+{n:36,name:"地火明夷",short:"明夷",bin:"101000",fortune:"小凶",text:"光明受损，晦暗其明。宜韬光养晦、忍辱负重，内藏智慧、外示柔顺，静待时机。"},
+{n:37,name:"风火家人",short:"家人",bin:"101011",fortune:"吉",text:"家道和睦，各安其位。宜先齐家、正家道，家和万事兴，内部和谐则外事顺。"},
+{n:38,name:"火泽睽",short:"睽",bin:"110101",fortune:"中平",text:"乖离不合，火泽相违。宜求同存异、化解分歧，小事可成，大事须先消解矛盾。"},
+{n:39,name:"水山蹇",short:"蹇",bin:"001010",fortune:"凶",text:"跛足难行，进退维谷。宜反身修德、求助他人，险阻当前不宜独行，宜待时而动。"},
+{n:40,name:"雷水解",short:"解",bin:"010100",fortune:"吉",text:"险难解除，雷雨作而百果草木皆甲坼。宜及时解脱、宽恕释怀，化险为夷、重获生机。"},
+{n:41,name:"山泽损",short:"损",bin:"110001",fortune:"中平",text:"减损之道，先损后益。宜损己利人、适度牺牲，去除多余，诚信为本则终有所获。"},
+{n:42,name:"风雷益",short:"益",bin:"100011",fortune:"吉",text:"增益受益，损上益下。宜抓住机遇、积极作为，惠人惠己，乘势而上则大有可为。"},
+{n:43,name:"泽天夬",short:"夬",bin:"111110",fortune:"中平",text:"决断决裂，刚决于上。宜果敢明断、除邪去恶，但须光明正大，防鲁莽冲动。"},
+{n:44,name:"天风姤",short:"姤",bin:"011111",fortune:"中平",text:"不期而遇，一阴始生。宜防微杜渐、谨慎择交，勿轻信于人，防不期之患。"},
+{n:45,name:"泽地萃",short:"萃",bin:"000110",fortune:"吉",text:"荟萃聚集，泽上于地。宜聚众成事、团结协作，众人拾柴，大事可成。"},
+{n:46,name:"地风升",short:"升",bin:"011000",fortune:"吉",text:"上升晋升，地中生木。宜循序渐进、积极向上，积小成高，步步高升。"},
+{n:47,name:"泽水困",short:"困",bin:"010110",fortune:"凶",text:"困顿受挫，泽无水则困。宜守志不移、穷则思变，忍辱负重，静待脱困之机。"},
+{n:48,name:"水风井",short:"井",bin:"011010",fortune:"中平",text:"如井养人，取之不尽。宜修德惠民、稳固根基，持之以恒，勿半途而废。"},
+{n:49,name:"泽火革",short:"革",bin:"101110",fortune:"中平",text:"变革革新，泽中有火。时机成熟宜顺势变革、除旧布新，变革得正则大吉。"},
+{n:50,name:"火风鼎",short:"鼎",bin:"011101",fortune:"吉",text:"鼎新立势，木上有火。宜革故鼎新、养贤用能，稳固根基可成就大业。"},
+{n:51,name:"震为雷",short:"震",bin:"100100",fortune:"中平",text:"震动惊雷，恐惧修省。宜临危不惧、沉着应对，处变不惊，则虽惊而无咎。"},
+{n:52,name:"艮为山",short:"艮",bin:"001001",fortune:"中平",text:"静止如山，时止则止。宜知止而止、安分守己，静待时机，动不失宜。"},
+{n:53,name:"风山渐",short:"渐",bin:"001011",fortune:"吉",text:"循序渐进，如鸿雁渐进。宜按部就班、稳步推进，不可急于求成，功到自然成。"},
+{n:54,name:"雷泽归妹",short:"归妹",bin:"110100",fortune:"小凶",text:"名分不正，少女归长男。宜守正防凶、勿因冲动误事，婚恋之事尤须谨慎。"},
+{n:55,name:"雷火丰",short:"丰",bin:"101100",fortune:"吉",text:"丰盛盛大，如日中天。宜趁势而为、成就大事，但盛极必衰，须防乐极生悲。"},
+{n:56,name:"火山旅",short:"旅",bin:"001101",fortune:"中平",text:"旅居在外，行色匆匆。宜谨慎低调、随遇而安，谦逊守正则安，防孤立无援。"},
+{n:57,name:"巽为风",short:"巽",bin:"011011",fortune:"中平",text:"柔顺谦逊，随风而入。宜顺势而行、潜移默化，但须有主见，防优柔寡断。"},
+{n:58,name:"兑为泽",short:"兑",bin:"110110",fortune:"吉",text:"喜悦和睦，两泽相丽。宜以诚相待、和悦沟通，众乐乐则吉，防口舌是非。"},
+{n:59,name:"风水涣",short:"涣",bin:"010011",fortune:"中平",text:"涣散离散，风行水上。宜凝聚人心、化解隔阂，破除成见，转危为安。"},
+{n:60,name:"水泽节",short:"节",bin:"110010",fortune:"中平",text:"节制有度，泽上有水。宜适可而止、量入为出，有所节制则安，防过度而行。"},
+{n:61,name:"风泽中孚",short:"中孚",bin:"110011",fortune:"吉",text:"诚信中正，豚鱼可格。宜以诚感人、守信立身，诚之所至，金石为开。"},
+{n:62,name:"雷山小过",short:"小过",bin:"001100",fortune:"中平",text:"小有过越，飞鸟遗音。宜小事可为、大事不宜，谨慎守分，不越常规则无咎。"},
+{n:63,name:"水火既济",short:"既济",bin:"101010",fortune:"中平",text:"功成圆满，水火相济。宜守成防变、慎终如始，盛极防衰，不可得意忘形。"},
+{n:64,name:"火水未济",short:"未济",bin:"010101",fortune:"中平",text:"事未竟成，火水未交。宜继续努力、坚持到底，慎辨物居方，终能成功。"}
+];
+
+const BY_BIN = {};
+HEXAGRAMS.forEach(function(h){ BY_BIN[h.bin] = h; });
+
+const LINE_NAMES = ["初爻","二爻","三爻","四爻","五爻","上爻"];
+const COUNTER_NAMES = ["初","二","三","四","五","上"];
+const FORTUNE_CLASS = {"大吉":"fg-daji","吉":"fg-ji","中平":"fg-ping","小凶":"fg-xiong","凶":"fg-da-xiong"};
+
+function hexSymbol(n){ return String.fromCodePoint(0x4DC0 + n - 1); }
+
+/* ---------- 起卦核心 ---------- */
+function tossOneCoin(){ return Math.random() < 0.5 ? "正" : "反"; }
+function tossThree(){ return [tossOneCoin(), tossOneCoin(), tossOneCoin()]; }
+
+function lineInfoFromCoins(coins){
+  if(!coins || coins.some(function(c){ return c == null; })) return null;
+  const sum = coins.reduce(function(s,c){ return s + (c === "正" ? 3 : 2); }, 0);
+  return lineInfoFromSum(sum);
+}
+function lineInfoFromSum(sum){
+  const yang = (sum === 7 || sum === 9);
+  const moving = (sum === 6 || sum === 9);
+  let label;
+  if(sum === 6) label = "老阴（动爻 ✕）";
+  else if(sum === 7) label = "少阳";
+  else if(sum === 8) label = "少阴";
+  else label = "老阳（动爻 ○）";
+  return { yang: yang, moving: moving, sum: sum, label: label };
+}
+
+function hexFromLines(lines){
+  const bin = lines.map(function(l){ return l.yang ? "1" : "0"; }).join("");
+  return BY_BIN[bin];
+}
+function changedLines(lines){
+  return lines.map(function(l){ return { yang: l.yang !== l.moving, moving: false }; });
+}
+
+/* ---------- 渲染 ---------- */
+function barsOnlyHTML(lines){
+  let html = "";
+  for(let i = lines.length - 1; i >= 0; i--){
+    const l = lines[i];
+    const bars = l.yang
+      ? '<div class="bar bar-yang"></div>'
+      : '<div class="bar bar-yin"></div><div class="bar bar-yin"></div>';
+    const marker = l.moving
+      ? '<span class="marker">' + (l.yang ? "○" : "✕") + '</span>'
+      : '<span class="marker"></span>';
+    html += '<div class="yao-row"><div class="yao-bars">' + bars + '</div>' + marker + '</div>';
+  }
+  return html;
+}
+
+function linesHTML(lines){
+  let html = "";
+  for(let i = 5; i >= 0; i--){
+    const l = lines[i];
+    const bars = l.yang
+      ? '<div class="bar bar-yang"></div>'
+      : '<div class="bar bar-yin"></div><div class="bar bar-yin"></div>';
+    const marker = l.moving
+      ? '<span class="marker">' + (l.yang ? "○" : "✕") + '</span>'
+      : '<span class="marker"></span>';
+    html += '<div class="yao-row"><div class="yao-name">' + LINE_NAMES[i] + '</div><div class="yao-bars">' + bars + '</div>' + marker + '</div>';
+  }
+  return html;
+}
+
+function hexCard(title, h, lines){
+  return '<div class="hex-card">' +
+    '<div class="hex-head">' +
+      '<span class="hex-symbol">' + hexSymbol(h.n) + '</span>' +
+      '<div><div class="hex-name">' + h.name + '</div><div class="hex-short">第 ' + h.n + ' 卦 · ' + h.short + '</div></div>' +
+      '<span class="fortune ' + FORTUNE_CLASS[h.fortune] + '">' + h.fortune + '</span>' +
+    '</div>' +
+    '<div class="hex-lines">' + linesHTML(lines) + '</div>' +
+    '<div class="hex-text">' + h.text + '</div>' +
+  '</div>';
+}
+
+function showResult(lines){
+  const ben = hexFromLines(lines);
+  const movingIdx = [];
+  lines.forEach(function(l,i){ if(l.moving) movingIdx.push(i); });
+  const hasChange = movingIdx.length > 0;
+  const bianLines = changedLines(lines);
+  const bian = hasChange ? hexFromLines(bianLines) : null;
+
+  let html = '<div class="result-grid">';
+  html += hexCard("本卦", ben, lines);
+  if(bian) html += hexCard("变卦", bian, bianLines);
+  html += '</div>';
+
+  html += '<div class="move-info">';
+  if(hasChange){
+    html += '动爻：' + movingIdx.map(function(i){ return LINE_NAMES[i]; }).join("、");
+    html += '（' + ben.name + ' 变 ' + bian.name + '）';
+  } else {
+    html += '六爻安静，无动爻，无变卦';
+  }
+  html += '</div>';
+
+  document.getElementById("resultBody").innerHTML = html;
+  document.getElementById("resultSection").hidden = false;
+  document.getElementById("resultSection").scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+/* ---------- 模式切换 ---------- */
+function switchMode(mode){
+  const online = (mode === "online");
+  document.getElementById("tabOnline").className = "tab" + (online ? " active" : "");
+  document.getElementById("tabOffline").className = "tab" + (online ? "" : " active");
+  document.getElementById("onlineSection").hidden = !online;
+  document.getElementById("offlineSection").hidden = online;
+}
+
+/* ---------- 线上模式 ---------- */
+let onlineLines = [];
+let tossing = false;
+
+function updateOnlineUI(){
+  const done = onlineLines.length >= 6;
+  const counter = document.getElementById("lineCounter");
+  if(done){
+    counter.textContent = "已得六爻，卦象如下";
+  } else {
+    counter.textContent = "第 " + COUNTER_NAMES[onlineLines.length] + " 爻（" + (onlineLines.length + 1) + " / 6）";
+  }
+  document.getElementById("onlinePreview").innerHTML = barsOnlyHTML(onlineLines);
+  document.getElementById("tossBtn").disabled = done || tossing;
+}
+
+function tossOnline(){
+  if(tossing || onlineLines.length >= 6) return;
+  tossing = true;
+  updateOnlineUI();
+
+  const box = document.getElementById("coinsDisplay");
+  box.innerHTML = "";
+  for(let k = 0; k < 3; k++){
+    const el = document.createElement("div");
+    el.className = "coin flipping";
+    el.textContent = "⚄";
+    box.appendChild(el);
+  }
+  document.getElementById("lastLineLabel").textContent = "掷币中……";
+
+  const result = tossThree();
+  setTimeout(function(){
+    box.innerHTML = "";
+    result.forEach(function(c){
+      const el = document.createElement("div");
+      el.className = "coin " + (c === "正" ? "zheng" : "fan");
+      el.textContent = c;
+      box.appendChild(el);
+    });
+
+    const info = lineInfoFromCoins(result);
+    onlineLines.push(info);
+    document.getElementById("lastLineLabel").textContent =
+      "本爻：" + LINE_NAMES[onlineLines.length - 1] + " —— " + info.label + "（" + result.join("、") + "）";
+
+    tossing = false;
+    updateOnlineUI();
+    if(onlineLines.length >= 6){
+      showResult(onlineLines);
+    }
+  }, 900);
+}
+
+function resetOnline(){
+  onlineLines = [];
+  tossing = false;
+  document.getElementById("coinsDisplay").innerHTML = "";
+  document.getElementById("lastLineLabel").textContent = "";
+  document.getElementById("resultSection").hidden = true;
+  updateOnlineUI();
+  switchMode("online");
+}
+
+/* ---------- 线下模式 ---------- */
+let offlineCoins = [];
+function initOffline(){
+  offlineCoins = [];
+  for(let i = 0; i < 6; i++) offlineCoins.push([null, null, null]);
+}
+
+function renderOffline(){
+  const wrap = document.getElementById("offlineLines");
+  wrap.innerHTML = "";
+  for(let i = 0; i < 6; i++){
+    const row = document.createElement("div");
+    row.className = "offline-row";
+
+    const lbl = document.createElement("div");
+    lbl.className = "offline-name";
+    lbl.textContent = LINE_NAMES[i];
+    row.appendChild(lbl);
+
+    const coinsBox = document.createElement("div");
+    coinsBox.className = "offline-coins";
+    for(let c = 0; c < 3; c++){
+      const btn = document.createElement("button");
+      const v = offlineCoins[i][c];
+      btn.textContent = v == null ? "—" : v;
+      btn.className = "coin-sm" + (v == null ? "" : (v === "正" ? " zheng" : " fan"));
+      btn.addEventListener("click", (function(ii, cc){
+        return function(){
+          const cur = offlineCoins[ii][cc];
+          offlineCoins[ii][cc] = (cur == null || cur === "反") ? "正" : "反";
+          renderOffline();
+        };
+      })(i, c));
+      coinsBox.appendChild(btn);
+    }
+    row.appendChild(coinsBox);
+
+    const res = document.createElement("div");
+    const info = lineInfoFromCoins(offlineCoins[i]);
+    res.textContent = info ? info.label.replace("（动爻 ✕）","✕").replace("（动爻 ○）","○") : "未完成";
+    res.className = "offline-result " + (info ? (info.yang ? "yang" : "yin") : "empty");
+    row.appendChild(res);
+
+    wrap.appendChild(row);
+  }
+}
+
+function offlineGenerate(){
+  for(let i = 0; i < 6; i++){
+    if(offlineCoins[i].some(function(c){ return c == null; })){
+      alert("请先完成六爻的硬币输入（每爻三枚）。");
+      return;
+    }
+  }
+  const lines = offlineCoins.map(function(cs){ return lineInfoFromCoins(cs); });
+  showResult(lines);
+}
+
+function resetOffline(){
+  initOffline();
+  renderOffline();
+  document.getElementById("resultSection").hidden = true;
+}
+
+function againBtn(){
+  if(document.getElementById("onlineSection").hidden){
+    resetOffline();
+    switchMode("offline");
+  } else {
+    resetOnline();
+    switchMode("online");
+  }
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+/* ---------- 初始化 ---------- */
+initOffline();
+renderOffline();
+updateOnlineUI();
+</script>
+</body>
+</html>
